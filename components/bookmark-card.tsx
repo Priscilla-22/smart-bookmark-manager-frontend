@@ -1,32 +1,75 @@
 "use client"
 
-import { Trash2, ExternalLink, Tag } from "lucide-react"
+import { Trash2, ExternalLink, Tag, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useBookmarks } from "@/hooks/useBookmarks"
+import { Bookmark } from "@/types"
+import { useToast } from "@/hooks/use-toast"
 
 interface BookmarkCardProps {
-  bookmark: {
-    id: string
-    title: string
-    url: string
-    description: string
-    tags: string[]
-    favicon: string
-  }
+  bookmark: Bookmark
 }
 
 export function BookmarkCard({ bookmark }: BookmarkCardProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const { deleteBookmark } = useBookmarks()
+  const { toast } = useToast()
+
+  const handleDelete = async () => {
+    setIsLoading(true)
+    const success = await deleteBookmark(bookmark.id)
+    
+    if (success) {
+      toast({
+        title: "Bookmark deleted",
+        description: `"${bookmark.title}" has been removed.`,
+      })
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete bookmark. Please try again.",
+        variant: "destructive",
+      })
+    }
+    
+    setIsLoading(false)
+    setIsDeleting(false)
+  }
+
+  const getFaviconUrl = (url: string) => {
+    try {
+      const domain = new URL(url).hostname
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
+    } catch {
+      return null
+    }
+  }
 
   return (
     <div className="group rounded-lg border border-border bg-card p-4 transition-all hover:shadow-md hover:border-accent">
       <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="text-2xl">{bookmark.favicon}</div>
+        <div className="flex items-center justify-center w-8 h-8 rounded bg-muted">
+          {getFaviconUrl(bookmark.url) ? (
+            <img 
+              src={getFaviconUrl(bookmark.url)!} 
+              alt="" 
+              className="w-4 h-4"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
+            />
+          ) : (
+            <ExternalLink className="w-4 h-4 text-muted-foreground" />
+          )}
+        </div>
         <Button
           onClick={() => setIsDeleting(true)}
           variant="ghost"
           size="sm"
           className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10"
+          disabled={isLoading}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -34,18 +77,27 @@ export function BookmarkCard({ bookmark }: BookmarkCardProps) {
 
       <h3 className="font-semibold text-foreground mb-1 line-clamp-2 pr-2">{bookmark.title}</h3>
 
-      <p className="text-xs text-muted-foreground mb-3 line-clamp-1">{new URL(bookmark.url).hostname}</p>
+      <p className="text-xs text-muted-foreground mb-3 line-clamp-1">
+        {new URL(bookmark.url).hostname}
+      </p>
 
-      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{bookmark.description}</p>
+      {bookmark.description && (
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{bookmark.description}</p>
+      )}
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {bookmark.tags.slice(0, 2).map((tag) => (
           <span
-            key={tag}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted text-xs text-muted-foreground"
+            key={tag.id}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs"
+            style={{ 
+              backgroundColor: tag.color + '20', 
+              color: tag.color,
+              border: `1px solid ${tag.color}40`
+            }}
           >
             <Tag className="h-3 w-3" />
-            {tag}
+            {tag.name}
           </span>
         ))}
         {bookmark.tags.length > 2 && (
@@ -75,9 +127,17 @@ export function BookmarkCard({ bookmark }: BookmarkCardProps) {
               </Button>
               <Button
                 className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => setIsDeleting(false)}
+                onClick={handleDelete}
+                disabled={isLoading}
               >
-                Delete
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
               </Button>
             </div>
           </div>

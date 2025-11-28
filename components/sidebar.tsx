@@ -1,24 +1,15 @@
 "use client"
 
-import { ChevronDown, Users, Tag, Folder } from "lucide-react"
+import { ChevronDown, Users, Tag, Folder, Loader2 } from "lucide-react"
 import { useState } from "react"
+import { useUsers } from "@/hooks/useUsers"
+import { useTags } from "@/hooks/useTags"
+import { useBookmarkContext } from "@/contexts/BookmarkContext"
 
-interface SidebarProps {
-  activeUser: string | null
-  onUserChange: (userId: string | null) => void
-  selectedTag: string | null
-  onTagChange: (tag: string | null) => void
-}
-
-const MOCK_USERS = [
-  { id: "user-1", name: "John Doe" },
-  { id: "user-2", name: "Jane Smith" },
-  { id: "user-3", name: "Bob Johnson" },
-]
-
-const MOCK_TAGS = ["Work", "Personal", "Learning", "Design", "Development", "Articles"]
-
-export function Sidebar({ activeUser, onUserChange, selectedTag, onTagChange }: SidebarProps) {
+export function Sidebar() {
+  const { users, loading: usersLoading } = useUsers()
+  const { tags, loading: tagsLoading } = useTags()
+  const { selectedUser, setSelectedUser, selectedTags, setSelectedTags } = useBookmarkContext()
   const [expandedSections, setExpandedSections] = useState({
     users: true,
     tags: true,
@@ -58,28 +49,35 @@ export function Sidebar({ activeUser, onUserChange, selectedTag, onTagChange }: 
               {expandedSections.users && (
                 <div className="space-y-2 pl-6">
                   <button
-                    onClick={() => onUserChange(null)}
+                    onClick={() => setSelectedUser(null)}
                     className={`block w-full text-left text-sm px-3 py-2 rounded transition-colors ${
-                      activeUser === null
+                      selectedUser === null
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}
                   >
                     All Users
                   </button>
-                  {MOCK_USERS.map((user) => (
-                    <button
-                      key={user.id}
-                      onClick={() => onUserChange(user.id)}
-                      className={`block w-full text-left text-sm px-3 py-2 rounded transition-colors ${
-                        activeUser === user.id
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {user.name}
-                    </button>
-                  ))}
+                  
+                  {usersLoading ? (
+                    <div className="flex items-center justify-center py-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : (
+                    users.map((user) => (
+                      <button
+                        key={user.id}
+                        onClick={() => setSelectedUser(user)}
+                        className={`block w-full text-left text-sm px-3 py-2 rounded transition-colors ${
+                          selectedUser?.id === user.id
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {user.username}
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -98,19 +96,38 @@ export function Sidebar({ activeUser, onUserChange, selectedTag, onTagChange }: 
 
               {expandedSections.tags && (
                 <div className="space-y-2 pl-6">
-                  {MOCK_TAGS.map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => onTagChange(selectedTag === tag ? null : tag)}
-                      className={`block w-full text-left text-sm px-3 py-2 rounded transition-colors ${
-                        selectedTag === tag
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+                  {tagsLoading ? (
+                    <div className="flex items-center justify-center py-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : (
+                    tags.map((tag) => {
+                      const isSelected = selectedTags.some(t => t.id === tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedTags(selectedTags.filter(t => t.id !== tag.id));
+                            } else {
+                              setSelectedTags([...selectedTags, tag]);
+                            }
+                          }}
+                          className={`flex items-center gap-2 w-full text-left text-sm px-3 py-2 rounded transition-colors ${
+                            isSelected
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <div 
+                            className="w-3 h-3 rounded-full border-2"
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          {tag.name}
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>

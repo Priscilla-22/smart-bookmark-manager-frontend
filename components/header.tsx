@@ -1,29 +1,82 @@
 "use client"
 
-import { Plus, Search, LayoutGrid, List } from "lucide-react"
+import { Plus, Search, LayoutGrid, List, X } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useBookmarkContext } from "@/contexts/BookmarkContext"
 
 interface HeaderProps {
   onAddBookmark: () => void
-  activeUser: string | null
   viewMode: "grid" | "table"
   onViewModeChange: (mode: "grid" | "table") => void
 }
 
-export function Header({ onAddBookmark, activeUser, viewMode, onViewModeChange }: HeaderProps) {
+export function Header({ onAddBookmark, viewMode, onViewModeChange }: HeaderProps) {
+  const { searchTerm, setSearchTerm, selectedUser, selectedTags } = useBookmarkContext()
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      setSearchTerm(localSearchTerm)
+    }, 300)
+
+    return () => clearTimeout(debounceTimer)
+  }, [localSearchTerm, setSearchTerm])
+
+  useEffect(() => {
+    setLocalSearchTerm(searchTerm)
+  }, [searchTerm])
+
+  const clearSearch = () => {
+    setLocalSearchTerm('')
+    setSearchTerm('')
+  }
+
+  const getHeaderTitle = () => {
+    if (selectedUser) {
+      return `${selectedUser.username}'s Bookmarks`
+    }
+    return 'All Bookmarks'
+  }
+
+  const getSubtitle = () => {
+    const filters = []
+    if (selectedUser) filters.push(`User: ${selectedUser.username}`)
+    if (selectedTags.length > 0) filters.push(`Tags: ${selectedTags.map(t => t.name).join(', ')}`)
+    if (searchTerm) filters.push(`Search: "${searchTerm}"`)
+    
+    return filters.length > 0 ? filters.join(' • ') : 'Manage and organize your links'
+  }
+
   return (
     <header className="border-b border-border bg-card p-4 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Bookmarks</h1>
-          <p className="text-sm text-muted-foreground">Manage and organize your links</p>
+          <h1 className="text-2xl font-bold text-foreground">{getHeaderTitle()}</h1>
+          <p className="text-sm text-muted-foreground">{getSubtitle()}</p>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input type="text" placeholder="Search bookmarks..." className="w-full pl-10 sm:w-64" />
+            <Input 
+              type="text" 
+              placeholder="Search bookmarks..." 
+              className="w-full pl-10 pr-10 sm:w-64" 
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
+            />
+            {localSearchTerm && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2"
+                onClick={clearSearch}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
           </div>
 
           <div className="flex gap-2">

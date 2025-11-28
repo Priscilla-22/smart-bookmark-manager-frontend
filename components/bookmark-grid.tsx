@@ -1,68 +1,53 @@
 "use client"
 
+import { useMemo } from "react"
+import { Loader2 } from "lucide-react"
 import { BookmarkCard } from "./bookmark-card"
 import { BookmarkTable } from "./bookmark-table"
-
-const MOCK_BOOKMARKS = [
-  {
-    id: "1",
-    title: "React Documentation",
-    url: "https://react.dev",
-    description: "Official React documentation and guides",
-    tags: ["Learning", "Development"],
-    favicon: "⚛️",
-  },
-  {
-    id: "2",
-    title: "TypeScript Handbook",
-    url: "https://www.typescriptlang.org/docs/",
-    description: "Comprehensive TypeScript documentation",
-    tags: ["Development", "Learning"],
-    favicon: "📘",
-  },
-  {
-    id: "3",
-    title: "Tailwind CSS",
-    url: "https://tailwindcss.com",
-    description: "Utility-first CSS framework",
-    tags: ["Design", "Development"],
-    favicon: "🎨",
-  },
-  {
-    id: "4",
-    title: "GitHub",
-    url: "https://github.com",
-    description: "Where the world builds software",
-    tags: ["Work", "Development"],
-    favicon: "🐙",
-  },
-  {
-    id: "5",
-    title: "CSS-Tricks",
-    url: "https://css-tricks.com",
-    description: "Daily articles about CSS and web design",
-    tags: ["Articles", "Design"],
-    favicon: "🎯",
-  },
-  {
-    id: "6",
-    title: "Dev.to",
-    url: "https://dev.to",
-    description: "Community for developers",
-    tags: ["Articles", "Learning"],
-    favicon: "💻",
-  },
-]
+import { useBookmarks } from "@/hooks/useBookmarks"
+import { useBookmarkContext } from "@/contexts/BookmarkContext"
 
 interface BookmarkGridProps {
-  selectedTag: string | null
   viewMode: "grid" | "table"
 }
 
-export function BookmarkGrid({ selectedTag, viewMode }: BookmarkGridProps) {
-  const filteredBookmarks = selectedTag
-    ? MOCK_BOOKMARKS.filter((bookmark) => bookmark.tags.includes(selectedTag))
-    : MOCK_BOOKMARKS
+export function BookmarkGrid({ viewMode }: BookmarkGridProps) {
+  const { selectedUser, selectedTags, searchTerm } = useBookmarkContext()
+  
+  const filters = useMemo(() => ({
+    user_id: selectedUser?.id,
+    search: searchTerm || undefined,
+  }), [selectedUser, searchTerm])
+  
+  const { bookmarks, loading, error } = useBookmarks(filters)
+  
+  const filteredBookmarks = useMemo(() => {
+    if (selectedTags.length === 0) return bookmarks
+    
+    return bookmarks.filter(bookmark =>
+      bookmark.tags.some(tag =>
+        selectedTags.some(selectedTag => selectedTag.id === tag.id)
+      )
+    )
+  }, [bookmarks, selectedTags])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center p-4">
+        <div className="text-4xl mb-4">⚠️</div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Error loading bookmarks</h3>
+        <p className="text-muted-foreground">{error}</p>
+      </div>
+    )
+  }
 
   if (filteredBookmarks.length === 0) {
     return (
@@ -70,7 +55,9 @@ export function BookmarkGrid({ selectedTag, viewMode }: BookmarkGridProps) {
         <div className="text-4xl mb-4">📚</div>
         <h3 className="text-lg font-semibold text-foreground mb-2">No bookmarks found</h3>
         <p className="text-muted-foreground">
-          {selectedTag ? `No bookmarks with the "${selectedTag}" tag` : "Start adding bookmarks to get organized"}
+          {selectedTags.length > 0 || searchTerm 
+            ? "No bookmarks match your current filters" 
+            : "Start adding bookmarks to get organized"}
         </p>
       </div>
     )

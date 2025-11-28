@@ -5,36 +5,40 @@ import { Header } from "./header"
 import { Sidebar } from "./sidebar"
 import { BookmarkGrid } from "./bookmark-grid"
 import { AddBookmarkModal } from "./modals/add-bookmark-modal"
+import { BookmarkProvider, useBookmarkContext } from "@/contexts/BookmarkContext"
+import { ErrorBoundary } from "./error-boundary"
 
-export function Dashboard() {
+function DashboardContent() {
   const [showAddModal, setShowAddModal] = useState(false)
-  const [activeUser, setActiveUser] = useState<string | null>("user-1")
-  const [selectedTag, setSelectedTag] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
+  const { viewMode, setViewMode } = useBookmarkContext()
 
   return (
     <div className="flex h-screen flex-col bg-background lg:flex-row">
-      <Sidebar
-        activeUser={activeUser}
-        onUserChange={setActiveUser}
-        selectedTag={selectedTag}
-        onTagChange={setSelectedTag}
-      />
+      <Sidebar />
 
       <main className="flex-1 flex flex-col overflow-hidden">
         <Header
           onAddBookmark={() => setShowAddModal(true)}
-          activeUser={activeUser}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
         />
 
         <div className="flex-1 overflow-auto">
-          <BookmarkGrid selectedTag={selectedTag} viewMode={viewMode} />
+          <BookmarkGrid viewMode={viewMode} />
         </div>
       </main>
 
       {showAddModal && <AddBookmarkModal onClose={() => setShowAddModal(false)} />}
     </div>
+  )
+}
+
+export function Dashboard() {
+  return (
+    <ErrorBoundary>
+      <BookmarkProvider>
+        <DashboardContent />
+      </BookmarkProvider>
+    </ErrorBoundary>
   )
 }

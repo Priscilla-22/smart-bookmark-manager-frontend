@@ -15,6 +15,7 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-border">
+              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">#</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Title</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">URL</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Tags</th>
@@ -22,8 +23,11 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
             </tr>
           </thead>
           <tbody>
-            {bookmarks.map((bookmark) => (
+            {bookmarks.map((bookmark, index) => (
               <tr key={bookmark.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                <td className="px-4 py-3 text-sm">
+                  <span className="text-muted-foreground font-mono">{index + 1}</span>
+                </td>
                 <td className="px-4 py-3 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">🔗</span>

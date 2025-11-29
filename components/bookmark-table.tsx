@@ -50,8 +50,8 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
                     {bookmark.tags.map((tag) => (
                       <span 
                         key={tag.id} 
-                        className="px-2 py-1 text-xs bg-muted text-muted-foreground"
-                        style={{ backgroundColor: tag.color + '05', color: tag.color }}
+                        className="px-2 py-1 text-xs bg-muted text-muted-foreground border"
+                        style={{ backgroundColor: tag.color + '05', color: tag.color, borderColor: tag.color + '30' }}
                       >
                         {tag.name}
                       </span>

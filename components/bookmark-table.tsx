@@ -2,15 +2,7 @@
 
 import { ExternalLink, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
-interface Bookmark {
-  id: string
-  title: string
-  url: string
-  description: string
-  tags: string[]
-  favicon: string
-}
+import { Bookmark } from "@/types"
 
 interface BookmarkTableProps {
   bookmarks: Bookmark[]
@@ -34,7 +26,7 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
               <tr key={bookmark.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                 <td className="px-4 py-3 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{bookmark.favicon}</span>
+                    <span className="text-lg">🔗</span>
                     <div>
                       <p className="font-medium text-foreground">{bookmark.title}</p>
                       <p className="text-xs text-muted-foreground">{bookmark.description}</p>
@@ -55,8 +47,12 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
                 <td className="px-4 py-3 text-sm">
                   <div className="flex flex-wrap gap-1">
                     {bookmark.tags.map((tag) => (
-                      <span key={tag} className="px-2 py-1 text-xs rounded-full bg-muted text-muted-foreground">
-                        {tag}
+                      <span 
+                        key={tag.id} 
+                        className="px-2 py-1 text-xs rounded-full bg-muted text-muted-foreground"
+                        style={{ backgroundColor: tag.color + '20', color: tag.color }}
+                      >
+                        {tag.name}
                       </span>
                     ))}
                   </div>

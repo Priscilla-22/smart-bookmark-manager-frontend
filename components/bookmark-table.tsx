@@ -29,12 +29,9 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
                   <span className="text-muted-foreground font-mono">{index + 1}</span>
                 </td>
                 <td className="px-4 py-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🔗</span>
-                    <div>
-                      <p className="font-medium text-foreground">{bookmark.title}</p>
-                      <p className="text-xs text-muted-foreground">{bookmark.description}</p>
-                    </div>
+                  <div>
+                    <p className="font-medium text-foreground">{bookmark.title}</p>
+                    <p className="text-xs text-muted-foreground">{bookmark.description}</p>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-sm">

@@ -12,14 +12,27 @@ interface BookmarkGridProps {
 }
 
 export function BookmarkGrid({ viewMode }: BookmarkGridProps) {
-  const { selectedUser, selectedTags, searchTerm } = useBookmarkContext()
+  const { selectedUser, selectedCollection, selectedTags, searchTerm, refreshTrigger } = useBookmarkContext()
   
-  const filters = useMemo(() => ({
-    user_id: selectedUser?.id,
-    search: searchTerm || undefined,
-  }), [selectedUser, searchTerm])
+  const filters = useMemo(() => {
+    const baseFilters: any = {
+      user_id: selectedUser?.id,
+      search: searchTerm || undefined,
+      _refresh: refreshTrigger, // Include refresh trigger to force re-fetch
+    }
+    
+    // Handle collection filtering
+    if (selectedCollection) {
+      if (selectedCollection.id === -1) {
+        baseFilters.collection_id = null
+      } else {
+        baseFilters.collection_id = selectedCollection.id
+      }
+    }
+    return baseFilters
+  }, [selectedUser, selectedCollection, searchTerm, refreshTrigger])
   
-  const { bookmarks, loading, error } = useBookmarks(filters)
+  const { bookmarks, loading, error, refetch } = useBookmarks(filters)
   
   const filteredBookmarks = useMemo(() => {
     if (selectedTags.length === 0) return bookmarks
@@ -72,6 +85,6 @@ export function BookmarkGrid({ viewMode }: BookmarkGridProps) {
       </div>
     </div>
   ) : (
-    <BookmarkTable bookmarks={filteredBookmarks} />
+    <BookmarkTable bookmarks={filteredBookmarks} onRefresh={refetch} />
   )
 }

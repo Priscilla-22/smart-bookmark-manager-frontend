@@ -1,14 +1,59 @@
 "use client"
 
+import { useState } from "react"
 import { ExternalLink, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { DeleteBookmarkModal } from "@/components/modals/delete-bookmark-modal"
+import { useBookmarks } from "@/hooks/useBookmarks"
+import { useToast } from "@/hooks/use-toast"
 import { Bookmark } from "@/types"
 
 interface BookmarkTableProps {
   bookmarks: Bookmark[]
+  onRefresh?: () => void
 }
 
-export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
+export function BookmarkTable({ bookmarks, onRefresh }: BookmarkTableProps) {
+  const [bookmarkToDelete, setBookmarkToDelete] = useState<Bookmark | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const { deleteBookmark } = useBookmarks()
+  const { toast } = useToast()
+
+  const handleDeleteClick = (bookmark: Bookmark) => {
+    setBookmarkToDelete(bookmark)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!bookmarkToDelete) return
+    
+    setIsDeleting(true)
+    const success = await deleteBookmark(bookmarkToDelete.id)
+    
+    if (success) {
+      toast({
+        title: "Bookmark deleted",
+        description: `"${bookmarkToDelete.title}" has been removed.`,
+      })
+      setBookmarkToDelete(null)
+    } else {
+      toast({
+        title: "Bookmark not found",
+        description: "This bookmark may have already been deleted. The list will be refreshed.",
+        variant: "destructive",
+      })
+      setBookmarkToDelete(null)
+      // Refresh the list to show current data
+      if (onRefresh) {
+        onRefresh()
+      }
+    }
+    
+    setIsDeleting(false)
+  }
+
+  const handleDeleteCancel = () => {
+    setBookmarkToDelete(null)
+  }
   return (
     <div className="p-4 md:p-6">
       <div className="overflow-x-auto">
@@ -39,10 +84,21 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
                     href={bookmark.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-accent hover:underline flex items-center gap-1 truncate"
+                    className="text-accent hover:underline flex items-center gap-1 truncate group relative"
+                    title={bookmark.summary || bookmark.description || bookmark.title}
                   >
                     <span className="truncate">{new URL(bookmark.url).hostname}</span>
                     <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                    
+                    {(bookmark.summary || bookmark.description) && (
+                      <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 bg-gray-900 text-white text-sm rounded-lg p-3 shadow-lg max-w-xs whitespace-normal">
+                        <div className="font-semibold mb-1">{bookmark.title}</div>
+                        <div className="text-gray-300 text-xs">
+                          {bookmark.summary || bookmark.description}
+                        </div>
+                        <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
+                      </div>
+                    )}
                   </a>
                 </td>
                 <td className="px-4 py-3 text-sm">
@@ -62,6 +118,7 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
                   <Button
                     variant="ghost"
                     size="icon"
+                    onClick={() => handleDeleteClick(bookmark)}
                     className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -72,6 +129,15 @@ export function BookmarkTable({ bookmarks }: BookmarkTableProps) {
           </tbody>
         </table>
       </div>
+      
+      {bookmarkToDelete && (
+        <DeleteBookmarkModal
+          bookmark={bookmarkToDelete}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   )
 }

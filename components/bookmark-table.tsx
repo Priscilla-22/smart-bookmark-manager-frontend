@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ExternalLink, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DeleteBookmarkModal } from "@/components/modals/delete-bookmark-modal"
-import { useBookmarks } from "@/hooks/useBookmarks"
+import { bookmarkService } from "@/services/bookmarkService"
 import { useToast } from "@/hooks/use-toast"
 import { Bookmark } from "@/types"
 
@@ -16,7 +16,6 @@ interface BookmarkTableProps {
 export function BookmarkTable({ bookmarks, onRefresh }: BookmarkTableProps) {
   const [bookmarkToDelete, setBookmarkToDelete] = useState<Bookmark | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const { deleteBookmark } = useBookmarks()
   const { toast } = useToast()
 
   const handleDeleteClick = (bookmark: Bookmark) => {
@@ -27,25 +26,26 @@ export function BookmarkTable({ bookmarks, onRefresh }: BookmarkTableProps) {
     if (!bookmarkToDelete) return
     
     setIsDeleting(true)
-    const success = await deleteBookmark(bookmarkToDelete.id)
+    const response = await bookmarkService.deleteBookmark(bookmarkToDelete.id)
     
-    if (success) {
+    if (!response.error) {
       toast({
         title: "Bookmark deleted",
         description: `"${bookmarkToDelete.title}" has been removed.`,
       })
       setBookmarkToDelete(null)
-    } else {
-      toast({
-        title: "Bookmark not found",
-        description: "This bookmark may have already been deleted. The list will be refreshed.",
-        variant: "destructive",
-      })
-      setBookmarkToDelete(null)
-      // Refresh the list to show current data
+      
+      // Refresh the parent list
       if (onRefresh) {
         onRefresh()
       }
+    } else {
+      toast({
+        title: "Error deleting bookmark",
+        description: response.error || "Failed to delete bookmark. Please try again.",
+        variant: "destructive",
+      })
+      setBookmarkToDelete(null)
     }
     
     setIsDeleting(false)

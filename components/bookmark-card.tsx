@@ -38,7 +38,7 @@ export function BookmarkCard({ bookmark }: BookmarkCardProps) {
     setIsDeleting(false)
   }
 
-  const getFaviconUrl = (url: string) => {
+  const getWebsiteIcon = (url: string) => {
     try {
       const domain = new URL(url).hostname
       return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
@@ -51,9 +51,9 @@ export function BookmarkCard({ bookmark }: BookmarkCardProps) {
     <div className="group rounded-lg border border-border bg-card p-4 transition-all hover:shadow-md hover:border-accent">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center justify-center w-8 h-8 rounded bg-muted">
-          {getFaviconUrl(bookmark.url) ? (
+          {getWebsiteIcon(bookmark.url) ? (
             <img 
-              src={getFaviconUrl(bookmark.url)!} 
+              src={getWebsiteIcon(bookmark.url)!} 
               alt="" 
               className="w-4 h-4"
               onError={(e) => {

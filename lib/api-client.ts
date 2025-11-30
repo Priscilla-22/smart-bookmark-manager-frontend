@@ -33,13 +33,29 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
-
+      
       if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const data = await response.json();
+          errorMessage = data.detail || errorMessage;
+        } catch {
+          // If there's no JSON body, use the status message
+        }
         return {
-          error: data.detail || `HTTP ${response.status}`,
+          error: errorMessage,
           status: response.status,
         };
+      }
+
+      // Handle responses that may or may not have a JSON body
+      let data = null;
+      if (response.status !== 204) { // 204 No Content has no body
+        try {
+          data = await response.json();
+        } catch {
+          // If there's no JSON body, data remains null
+        }
       }
 
       return {

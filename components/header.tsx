@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input"
 import { useBookmarkContext } from "@/contexts/BookmarkContext"
 
 interface HeaderProps {
-  onAddBookmark: () => void
+  onAddBookmark?: () => void
   viewMode: "grid" | "table"
   onViewModeChange: (mode: "grid" | "table") => void
+  isUsersPage?: boolean
 }
 
-export function Header({ onAddBookmark, viewMode, onViewModeChange }: HeaderProps) {
-  const { searchTerm, setSearchTerm, selectedUser, selectedTags } = useBookmarkContext()
+export function Header({ onAddBookmark, viewMode, onViewModeChange, isUsersPage = false }: HeaderProps) {
+  const { searchTerm, setSearchTerm, selectedUser, selectedCollection, selectedTags } = useBookmarkContext()
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
 
   useEffect(() => {
@@ -34,6 +35,15 @@ export function Header({ onAddBookmark, viewMode, onViewModeChange }: HeaderProp
   }
 
   const getHeaderTitle = () => {
+    if (isUsersPage) {
+      return 'User Management'
+    }
+    if (selectedCollection) {
+      if (selectedCollection.id === -1) {
+        return 'Uncategorized Bookmarks'
+      }
+      return `${selectedCollection.name} Collection`
+    }
     if (selectedUser) {
       return `${selectedUser.username}'s Bookmarks`
     }
@@ -41,7 +51,21 @@ export function Header({ onAddBookmark, viewMode, onViewModeChange }: HeaderProp
   }
 
   const getSubtitle = () => {
+    if (isUsersPage) {
+      return 'Manage users and their accounts'
+    }
+    
     const filters = []
+    if (selectedCollection) {
+      if (selectedCollection.id === -1) {
+        filters.push('Bookmarks without a collection')
+      } else {
+        filters.push(`Collection: ${selectedCollection.name}`)
+        if (selectedCollection.description) {
+          filters.push(selectedCollection.description)
+        }
+      }
+    }
     if (selectedUser) filters.push(`User: ${selectedUser.username}`)
     if (selectedTags.length > 0) filters.push(`Tags: ${selectedTags.map(t => t.name).join(', ')}`)
     if (searchTerm) filters.push(`Search: "${searchTerm}"`)
@@ -62,7 +86,7 @@ export function Header({ onAddBookmark, viewMode, onViewModeChange }: HeaderProp
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input 
               type="text" 
-              placeholder="Search bookmarks..." 
+              placeholder={isUsersPage ? "Search users..." : "Search bookmarks..."} 
               className="w-full pl-10 pr-10 sm:w-64" 
               value={localSearchTerm}
               onChange={(e) => setLocalSearchTerm(e.target.value)}
@@ -98,13 +122,15 @@ export function Header({ onAddBookmark, viewMode, onViewModeChange }: HeaderProp
             </Button>
           </div>
 
-          <Button
-            onClick={onAddBookmark}
-            className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 sm:w-auto"
-          >
-            <Plus className="h-4 w-4" />
-            Add Bookmark
-          </Button>
+          {!isUsersPage && onAddBookmark && (
+            <Button
+              onClick={onAddBookmark}
+              className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 sm:w-auto"
+            >
+              <Plus className="h-4 w-4" />
+              Add Bookmark
+            </Button>
+          )}
         </div>
       </div>
     </header>

@@ -30,17 +30,17 @@ export function useTags() {
     fetchTags();
   }, [fetchTags]);
 
-  const createTag = useCallback(async (tagData: TagCreate) => {
+  const createTag = useCallback(async (tagData: TagCreate): Promise<Tag | null> => {
     setError(null);
     const response = await tagService.createTag(tagData);
     
     if (response.error) {
       setError(response.error);
-      return false;
+      return null;
     }
     
     await fetchTags();
-    return true;
+    return response.data || null;
   }, [fetchTags]);
 
   const updateTag = useCallback(async (id: number, tagData: TagCreate) => {

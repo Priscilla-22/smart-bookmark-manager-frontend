@@ -10,6 +10,13 @@ export const bookmarkService = {
     const params = new URLSearchParams();
     
     if (filters.user_id) params.append('user_id', filters.user_id.toString());
+    if (filters.collection_id !== undefined) {
+      if (filters.collection_id === null) {
+        params.append('collection_id', 'null');
+      } else {
+        params.append('collection_id', filters.collection_id.toString());
+      }
+    }
     if (filters.search) params.append('search', filters.search);
     if (filters.skip) params.append('skip', filters.skip.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
@@ -32,5 +39,45 @@ export const bookmarkService = {
 
   async deleteBookmark(id: number) {
     return apiClient.delete(`/api/bookmarks/${id}`);
+  },
+
+  async suggestTags(url: string, title?: string, description?: string, existingTags?: string[]) {
+    const data: any = { url };
+    if (title) data.title = title;
+    if (description) data.description = description;
+    if (existingTags && existingTags.length > 0) data.existing_tags = existingTags;
+    
+    return apiClient.post<{suggestions: string[]}>('/api/bookmarks/suggest-tags', data);
+  },
+
+  async analyzeUrl(url: string) {
+    return apiClient.post<{
+      url: string;
+      title?: string;
+      description?: string;
+      summary?: string;
+      content_length: number;
+    }>(`/api/bookmarks/analyze-url?url=${encodeURIComponent(url)}&use_ml=true`);
+  },
+
+  async getSimilarBookmarks(url: string, title?: string, description?: string, userId?: number) {
+    const data: any = { url };
+    if (title) data.title = title;
+    if (description) data.description = description;
+    if (userId) data.user_id = userId;
+    
+    return apiClient.post<{
+      recommendations: Array<{
+        id: number;
+        title: string;
+        url: string;
+        description?: string;
+        summary?: string;
+        similarity_score: number;
+        similarity_reasons: string[];
+        tags: Array<{ name: string; color: string }>;
+        created_at?: string;
+      }>;
+    }>('/api/bookmarks/recommend-similar', data);
   },
 };

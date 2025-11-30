@@ -1,8 +1,5 @@
-/**
- * React hooks for bookmark operations
- */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { bookmarkService } from '@/services/bookmarkService';
 import { Bookmark, BookmarkCreate, BookmarkUpdate, BookmarkFilters } from '@/types';
 
@@ -10,14 +7,17 @@ export function useBookmarks(initialFilters: BookmarkFilters = {}) {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<BookmarkFilters>(initialFilters);
 
-  const fetchBookmarks = useCallback(async (currentFilters?: BookmarkFilters) => {
+  const cleanFilters = useCallback((filters: BookmarkFilters) => {
+    const { _refresh, ...cleanedFilters } = filters;
+    return cleanedFilters;
+  }, []);
+
+  const fetchBookmarks = useCallback(async (searchFilters: BookmarkFilters) => {
     setLoading(true);
     setError(null);
     
-    const searchFilters = currentFilters || filters;
-    const response = await bookmarkService.getBookmarks(searchFilters);
+    const response = await bookmarkService.getBookmarks(cleanFilters(searchFilters));
     
     if (response.error) {
       setError(response.error);
@@ -26,11 +26,17 @@ export function useBookmarks(initialFilters: BookmarkFilters = {}) {
     }
     
     setLoading(false);
-  }, [filters]);
+  }, []);
 
+  const prevFiltersRef = useRef<string>();
+  
   useEffect(() => {
-    fetchBookmarks();
-  }, [fetchBookmarks]);
+    const filtersKey = JSON.stringify(initialFilters);
+    if (prevFiltersRef.current !== filtersKey) {
+      prevFiltersRef.current = filtersKey;
+      fetchBookmarks(initialFilters);
+    }
+  }, [fetchBookmarks, initialFilters]);
 
   const createBookmark = useCallback(async (bookmarkData: BookmarkCreate) => {
     setError(null);
@@ -41,7 +47,7 @@ export function useBookmarks(initialFilters: BookmarkFilters = {}) {
       return false;
     }
     
-    await fetchBookmarks();
+    await fetchBookmarks(initialFilters);
     return true;
   }, [fetchBookmarks]);
 
@@ -54,7 +60,7 @@ export function useBookmarks(initialFilters: BookmarkFilters = {}) {
       return false;
     }
     
-    await fetchBookmarks();
+    await fetchBookmarks(initialFilters);
     return true;
   }, [fetchBookmarks]);
 
@@ -67,30 +73,24 @@ export function useBookmarks(initialFilters: BookmarkFilters = {}) {
       return false;
     }
     
-    await fetchBookmarks();
+    await fetchBookmarks(initialFilters);
     return true;
   }, [fetchBookmarks]);
 
-  const updateFilters = useCallback((newFilters: BookmarkFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  }, []);
-
   const search = useCallback((searchTerm: string) => {
-    const newFilters = { ...filters, search: searchTerm, skip: 0 };
-    setFilters(newFilters);
+    const newFilters = { ...initialFilters, search: searchTerm, skip: 0 };
     fetchBookmarks(newFilters);
-  }, [filters, fetchBookmarks]);
+  }, [initialFilters, fetchBookmarks]);
 
   return {
     bookmarks,
     loading,
     error,
-    filters,
+    filters: initialFilters,
     createBookmark,
     updateBookmark,
     deleteBookmark,
-    updateFilters,
     search,
-    refetch: fetchBookmarks,
+    refetch: () => fetchBookmarks(initialFilters),
   };
 }

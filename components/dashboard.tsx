@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Header } from "./header"
 import { Sidebar } from "./sidebar"
 import { BookmarkGrid } from "./bookmark-grid"
@@ -10,7 +10,11 @@ import { ErrorBoundary } from "./error-boundary"
 
 function DashboardContent() {
   const [showAddModal, setShowAddModal] = useState(false)
-  const { viewMode, setViewMode } = useBookmarkContext()
+  const { viewMode, setViewMode, triggerRefresh } = useBookmarkContext()
+  
+  const handleBookmarkCreated = () => {
+    triggerRefresh()
+  }
 
   return (
     <div className="flex h-screen flex-col bg-background lg:flex-row">
@@ -28,7 +32,12 @@ function DashboardContent() {
         </div>
       </main>
 
-      {showAddModal && <AddBookmarkModal onClose={() => setShowAddModal(false)} />}
+      {showAddModal && (
+        <AddBookmarkModal 
+          onClose={() => setShowAddModal(false)}
+          onBookmarkCreated={handleBookmarkCreated}
+        />
+      )}
     </div>
   )
 }
